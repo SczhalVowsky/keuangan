@@ -18,13 +18,12 @@ seperti aplikasi biasa. Tidak perlu Play Store, tidak perlu internet setelah dip
 
 1. Buka repo ini di GitHub → **Settings** → **Pages**.
 2. Di bagian **Build and deployment**, pilih **Source: Deploy from a branch**.
-3. Pilih branch tempat folder `keuangan/` berada (misalnya `main` setelah digabung), folder `/ (root)`, lalu **Save**.
+3. Pilih branch `main`, folder `/ (root)`, lalu **Save**.
 4. Tunggu 1–2 menit. Alamatnya menjadi:
-   `https://<username-github>.github.io/<nama-repo>/keuangan/`
+   `https://sczhalvowsky.github.io/keuangan/`
 
-> GitHub Pages gratis untuk repo **public**. Kalau repo-nya private, pakai GitHub Pro,
-> atau unggah folder `keuangan/` ke hosting gratis lain seperti Netlify Drop
-> (app.netlify.com/drop, tinggal seret folder) atau Vercel.
+> GitHub Pages gratis untuk repo **public**. Repo ini aman dibuat public karena tidak berisi
+> data keuangan apa pun; semua data tersimpan di HP Anda.
 
 ### 2. Pasang di HP
 
@@ -45,6 +44,9 @@ seperti aplikasi biasa. Tidak perlu Play Store, tidak perlu internet setelah dip
 
 ## Penting: soal data
 
+- Pindahan dari alamat lama (`sczhalvowsky.github.io/klikigr/keuangan/`)? Karena domainnya sama,
+  data di HP biasanya langsung muncul. Kalau kosong, pakai **Pulihkan backup**.
+
 - Data disimpan **di HP itu sendiri** (penyimpanan browser), tidak dikirim ke server mana pun.
 - Kalau data browser dihapus atau aplikasi di-uninstall, data ikut hilang.
   Biasakan **Backup data** rutin (misalnya sebulan sekali) dan simpan file backup-nya
@@ -59,9 +61,9 @@ keuangan di repo GitHub, jadi aman walaupun repo-nya public.
 
 | Halaman | Alamat | Isinya |
 |---|---|---|
-| Laporan | `keuangan/` | catat transaksi, ringkasan bulanan, backup & pulihkan |
-| Budget vs Realisasi | `keuangan/budget/` | budget per kategori vs pengeluaran yang dicatat di Laporan |
-| Net Worth | `keuangan/networth/` | snapshot aset & utang per bulan, tren, komposisi |
+| Laporan | `/` | catat transaksi, ringkasan bulanan, backup & pulihkan |
+| Budget vs Realisasi | `budget/` | budget per kategori vs pengeluaran yang dicatat di Laporan |
+| Net Worth | `networth/` | snapshot aset & utang per bulan, tren, komposisi |
 
 ### Mengisi budget bulan baru
 
@@ -95,4 +97,4 @@ budget dan net worth Anda tidak tersentuh saat memulihkan file lama).
 - Daftar kategori ada di `shared.js`, di bagian `const KATEGORI = { ... }` (dipakai halaman Laporan dan Budget). Tambah atau hapus sesuai kebutuhan.
 - Setelah mengubah file apa pun, naikkan angka `VERSION` di `sw.js` (misalnya `keuangan-v3`)
   supaya HP mengambil versi terbaru.
-- Coba di komputer: jalankan `npx http-server keuangan` lalu buka `http://localhost:8080`.
+- Coba di komputer: jalankan `npx http-server .` di folder repo ini lalu buka `http://localhost:8080`.
