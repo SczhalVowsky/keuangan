@@ -1,55 +1,102 @@
-/* Shared styles for the Budget and Net Worth pages. Mirrors the look of keuangan/index.html. */
+/* Shared styles for all finance pages (Laporan, Budget, Net Worth). */
 :root {
-  --bg: #f4f6f8; --card: #ffffff; --text: #1f2933; --muted: #6b7785;
-  --line: #e3e7eb; --brand: #0f766e; --in: #15803d; --out: #c2410c;
-  --ok: #15803d; --warn: #b45309; --bad: #dc2626; --header-text: #ffffff;
+  --bg: #f3f4fb; --card: #ffffff; --text: #1e2238; --muted: #6b7290;
+  --line: #e4e6f2; --soft: #f5f6fc;
+  --brand: #4f46e5;
+  --grad: linear-gradient(135deg, #0f766e 0%, #4338ca 100%);
+  --in: #15803d; --in-bg: #dcfce7; --out: #c2410c; --out-bg: #ffedd5;
+  --ok: #15803d; --warn: #b45309; --bad: #dc2626;
+  --shadow: 0 1px 2px rgba(30, 34, 56, .05), 0 6px 20px rgba(30, 34, 56, .06);
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0f1418; --card: #182027; --text: #e6ebef; --muted: #93a1ad;
-    --line: #27323b; --brand: #2dd4bf; --in: #4ade80; --out: #fb923c;
-    --ok: #4ade80; --warn: #facc15; --bad: #f87171; --header-text: #04201d;
+    --bg: #0b1020; --card: #151b2e; --text: #e7e9f3; --muted: #9aa3bf;
+    --line: #252d45; --soft: #1b2238;
+    --brand: #a5b4fc;
+    --grad: linear-gradient(135deg, #0f766e 0%, #3730a3 100%);
+    --in: #4ade80; --in-bg: rgba(74, 222, 128, .13); --out: #fb923c; --out-bg: rgba(251, 146, 60, .13);
+    --ok: #4ade80; --warn: #facc15; --bad: #f87171;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 6px 20px rgba(0, 0, 0, .25);
   }
 }
 * { box-sizing: border-box; }
 body {
   margin: 0; background: var(--bg); color: var(--text);
   font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  padding: env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 24px);
+  padding: 0 0 calc(env(safe-area-inset-bottom) + 24px);
 }
-header {
-  position: sticky; top: 0; z-index: 2; background: var(--brand); color: var(--header-text);
-  padding: 14px 16px; display: flex; align-items: center; gap: 8px;
-}
-header h1 { font-size: 17px; margin: 0; flex: 1; }
-header select {
-  font: inherit; border: 0; border-radius: 8px; padding: 6px 8px;
-  background: rgba(255,255,255,.9); color: #1f2933; max-width: 55%;
-}
+a { color: var(--brand); }
 
-/* Navigation between the finance pages (same markup is used in keuangan/index.html). */
-.subnav { max-width: 560px; margin: 12px auto 0; padding: 0 16px; display: flex; gap: 8px; }
-.subnav a {
-  flex: 1; text-align: center; padding: 8px 6px; border-radius: 10px; font-size: 14px;
-  color: var(--brand); text-decoration: none; border: 1px solid var(--line); background: var(--card);
+/* ---- Header & navigation ---- */
+header {
+  position: sticky; top: 0; z-index: 3; background: var(--grad); color: #fff;
+  padding: calc(env(safe-area-inset-top) + 14px) 16px 14px; display: flex; align-items: center; gap: 10px;
+  box-shadow: 0 2px 12px rgba(67, 56, 202, .25);
 }
-.subnav a[aria-current=page] { background: var(--brand); color: var(--header-text); border-color: var(--brand); font-weight: 600; }
+header h1 { font-size: 18px; margin: 0; flex: 1; letter-spacing: .01em; }
+header select {
+  font: inherit; font-size: 14px; border: 0; border-radius: 999px; padding: 7px 12px; width: auto;
+  background: rgba(255,255,255,.95); color: #1e2238; max-width: 62%;
+}
+.subnav { max-width: 560px; margin: 14px auto 0; padding: 0 16px; display: flex; gap: 6px; }
+.subnav a {
+  flex: 1; text-align: center; padding: 9px 6px; border-radius: 999px; font-size: 14px; font-weight: 500;
+  color: var(--muted); text-decoration: none; background: var(--card); box-shadow: var(--shadow);
+}
+.subnav a[aria-current=page] { background: var(--grad); color: #fff; font-weight: 600; }
 
 main { max-width: 560px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; }
-.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; min-width: 0; }
-.card h2 { font-size: 14px; margin: 0 0 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+
+/* ---- Cards ---- */
+.card { background: var(--card); border-radius: 18px; padding: 16px; min-width: 0; box-shadow: var(--shadow); }
+.card h2 {
+  font-size: 13px; margin: 0 0 12px; color: var(--muted); font-weight: 700;
+  text-transform: uppercase; letter-spacing: .05em;
+}
+
+/* Gradient summary card at the top of each page */
+.hero { background: var(--grad); color: #fff; border-radius: 22px; padding: 18px; box-shadow: 0 8px 24px rgba(67, 56, 202, .28); min-width: 0; }
+.hero small { display: block; color: rgba(255,255,255,.85); font-size: 13px; }
+.hero .angka { font-size: 30px; font-weight: 800; letter-spacing: -.01em; font-variant-numeric: tabular-nums; line-height: 1.25; }
+.hero .sub { font-size: 13px; color: rgba(255,255,255,.88); margin-top: 2px; }
+.hero .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.hero .tile { background: rgba(255,255,255,.15); border-radius: 14px; padding: 10px 12px; min-width: 0; }
+.hero .tile b { display: block; font-size: 16px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hero .tile.wide { grid-column: 1 / -1; }
+.hero .meter { height: 6px; border-radius: 3px; background: rgba(255,255,255,.25); margin-top: 12px; overflow: hidden; }
+.hero .meter span { display: block; height: 100%; background: #fff; border-radius: 3px; }
+.hero .chip {
+  display: inline-block; margin-top: 8px; padding: 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 600;
+  background: rgba(255,255,255,.2);
+}
+
+/* Period switcher: ‹ Oktober 2026 › */
+.periode { display: flex; align-items: center; gap: 8px; }
+.periode .label { flex: 1; text-align: center; min-width: 0; }
+.periode .label b { display: block; font-size: 17px; }
+.periode .label span { font-size: 13px; color: var(--muted); }
+.periode button {
+  flex: none; width: 42px; height: 42px; padding: 0; border-radius: 50%; font-size: 22px; line-height: 1;
+  background: var(--soft); color: var(--brand); font-weight: 600;
+}
+.periode button:disabled { opacity: .35; }
 
 .summary { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .summary .wide { grid-column: 1 / -1; }
 .stat small { display: block; color: var(--muted); font-size: 12px; }
 .stat b { font-size: 18px; font-variant-numeric: tabular-nums; }
-.stat.big b { font-size: 26px; }
 .in, .ok { color: var(--ok); } .out { color: var(--out); } .warn { color: var(--warn); } .bad { color: var(--bad); }
 .muted { color: var(--muted); }
 
-.notice { border-radius: 10px; padding: 10px 12px; font-size: 14px; background: var(--bg); border: 1px solid var(--line); }
-.notice.error { border-color: var(--bad); }
-.empty { color: var(--muted); text-align: center; padding: 8px 0; margin: 0; }
+.notice { border-radius: 14px; padding: 11px 13px; font-size: 14px; background: var(--card); box-shadow: var(--shadow); border-left: 4px solid var(--brand); }
+.notice.error { border-left-color: var(--bad); }
+.empty { color: var(--muted); text-align: center; padding: 10px 0; margin: 0; }
+
+/* Category icon bubble; set --warna inline to the category color */
+.ikon {
+  flex: none; width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; font-size: 19px;
+  background: color-mix(in srgb, var(--warna, #94a3b8) 20%, transparent);
+}
 
 .chart-box { position: relative; width: 100%; }
 
@@ -57,24 +104,25 @@ table { width: 100%; border-collapse: collapse; font-size: 14px; }
 th, td { padding: 8px 0; border-top: 1px solid var(--line); text-align: left; vertical-align: top; }
 th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; border-top: 0; }
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; padding-left: 12px; }
-tr.total td { font-weight: 600; }
+tr.total td { font-weight: 700; }
 
-/* Forms */
-input {
-  font: inherit; font-size: 16px; color: var(--text); background: var(--bg);
-  border: 1px solid var(--line); border-radius: 10px; padding: 10px; width: 100%; min-width: 0;
+/* ---- Forms ---- */
+input, select {
+  font: inherit; font-size: 16px; color: var(--text); background: var(--soft);
+  border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; width: 100%; min-width: 0;
 }
+input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 button {
-  font: inherit; font-size: 16px; border: 0; border-radius: 10px; padding: 12px;
-  background: var(--brand); color: var(--header-text); font-weight: 600; cursor: pointer;
+  font: inherit; font-size: 16px; border: 0; border-radius: 12px; padding: 12px;
+  background: var(--grad); color: #fff; font-weight: 600; cursor: pointer;
 }
-button.ghost { background: transparent; color: var(--brand); border: 1px solid var(--line); font-weight: 500; }
+button.ghost { background: var(--soft); color: var(--brand); font-weight: 500; }
 button.danger { background: transparent; color: var(--bad); border: 1px solid var(--line); font-weight: 500; }
 button.link { background: none; color: var(--brand); padding: 6px 0; font-size: 14px; font-weight: 500; justify-self: start; }
 button.icon { background: none; color: var(--muted); padding: 4px 8px; font-size: 20px; font-weight: 400; }
 details.card > summary {
   cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center;
-  font-weight: 600; color: var(--brand);
+  font-weight: 700; color: var(--brand);
 }
 details.card > summary::-webkit-details-marker { display: none; }
 details.card > summary::after { content: "▾"; transition: transform .15s; }

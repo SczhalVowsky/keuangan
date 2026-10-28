@@ -3,11 +3,25 @@ const Keu = (() => {
   const KEY_TRANSAKSI = 'keuangan-bulanan-v1';   // used by keuangan/index.html since v1
   const KEY_BUDGET = 'keuangan-budget-v1';       // { "2026-10": { "Makan & Minum": 1500000 } }
   const KEY_NETWORTH = 'keuangan-networth-v1';   // [ { bulan, aset: [{nama, nilai}], kewajiban: [...] } ]
+  const KEY_PENGATURAN = 'keuangan-pengaturan-v1'; // { mulai: 28 } = period starts on the 28th (payday)
 
   const KATEGORI = {
     keluar: ['Makan & Minum', 'Belanja', 'Transportasi', 'Tagihan & Listrik', 'Pulsa & Internet', 'Kesehatan', 'Pendidikan', 'Hiburan', 'Cicilan', 'Lainnya'],
     masuk: ['Gaji', 'Bonus', 'Usaha', 'Hadiah', 'Lainnya']
   };
+  // Icon and color per category; anything unknown falls back to a neutral tag.
+  const META_KATEGORI = {
+    'Makan & Minum': ['🍜', '#f97316'], 'Belanja': ['🛍️', '#ec4899'], 'Transportasi': ['🚗', '#3b82f6'],
+    'Tagihan & Listrik': ['💡', '#eab308'], 'Pulsa & Internet': ['📱', '#06b6d4'], 'Kesehatan': ['💊', '#ef4444'],
+    'Pendidikan': ['🎓', '#8b5cf6'], 'Hiburan': ['🎬', '#a855f7'], 'Cicilan': ['💳', '#64748b'], 'Lainnya': ['📦', '#94a3b8'],
+    'Gaji': ['💼', '#16a34a'], 'Bonus': ['🎁', '#22c55e'], 'Usaha': ['🏪', '#10b981'], 'Hadiah': ['🎉', '#14b8a6']
+  };
+  function metaKategori(kategori, jenis = 'keluar') {
+    if (jenis === 'masuk' && kategori === 'Lainnya') return { ikon: '✨', warna: '#22c55e' };
+    const [ikon, warna] = META_KATEGORI[kategori] || ['🏷️', '#94a3b8'];
+    return { ikon, warna };
+  }
+
   const NAMA_BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
@@ -42,6 +56,73 @@ const Keu = (() => {
   function bulanBerikut(bulan) {
     const [y, m] = bulan.split('-').map(Number);
     return m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`;
+  }
+
+  function bulanSebelum(bulan) {
+    const [y, m] = bulan.split('-').map(Number);
+    return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`;
+  }
+
+  const hariIni = () => new Date().toLocaleDateString('sv');   // YYYY-MM-DD, local time
+  const pad = (n) => String(n).padStart(2, '0');
+  const jumlahHari = (bulan) => { const [y, m] = bulan.split('-').map(Number); return new Date(y, m, 0).getDate(); };
+  const keUTC = (tgl) => { const [y, m, d] = tgl.split('-').map(Number); return Date.UTC(y, m - 1, d); };
+  const selisihHari = (a, b) => Math.round((keUTC(b) - keUTC(a)) / 864e5);
+
+  // ---- Pay period ----
+  // A period is named after the month it starts in. With payday 28, period "2026-10" runs
+  // 28 Oct - 27 Nov. Payday 1 (the default) gives plain calendar months.
+  // Paydays past the end of a short month start on that month's last day.
+  let mulaiCache = null;
+  function mulaiPeriode() {
+    if (mulaiCache === null) mulaiCache = loadPengaturan().mulai;
+    return mulaiCache;
+  }
+  const hariAwal = (bulan) => Math.min(mulaiPeriode(), jumlahHari(bulan));
+
+  // "2026-11-05" -> "2026-10" when the period starts on the 28th
+  function periodeDari(tanggal) {
+    const bulan = tanggal.slice(0, 7);
+    return Number(tanggal.slice(8, 10)) >= hariAwal(bulan) ? bulan : bulanSebelum(bulan);
+  }
+  const periodeIni = () => periodeDari(hariIni());
+
+  function rentangPeriode(bulan) {
+    const awal = `${bulan}-${pad(hariAwal(bulan))}`;
+    const berikut = bulanBerikut(bulan), hAwal = hariAwal(berikut);
+    const akhir = hAwal > 1 ? `${berikut}-${pad(hAwal - 1)}` : `${bulan}-${pad(jumlahHari(bulan))}`;
+    return { awal, akhir };
+  }
+
+  // "2026-10-28" -> "28 Okt" (or "28 Okt 2026")
+  function tanggalPendek(tgl, denganTahun = false) {
+    const [y, m, d] = tgl.split('-');
+    return `${Number(d)} ${NAMA_BULAN[Number(m) - 1].slice(0, 3)}${denganTahun ? ' ' + y : ''}`;
+  }
+
+  // "28 Okt – 27 Nov 2026", "28 Des 2026 – 27 Jan 2027", "1 – 31 Okt 2026"
+  function labelRentang(bulan) {
+    const { awal, akhir } = rentangPeriode(bulan);
+    if (awal.slice(0, 4) !== akhir.slice(0, 4)) return `${tanggalPendek(awal, true)} – ${tanggalPendek(akhir, true)}`;
+    if (awal.slice(0, 7) === akhir.slice(0, 7)) return `${Number(awal.slice(8))} – ${tanggalPendek(akhir, true)}`;
+    return `${tanggalPendek(awal)} – ${tanggalPendek(akhir, true)}`;
+  }
+
+  // Dropdown text: just the month for calendar periods, "Okt 2026 · 28 Okt–27 Nov" otherwise.
+  function labelPeriode(bulan) {
+    if (mulaiPeriode() === 1) return namaBulan(bulan);
+    const { awal, akhir } = rentangPeriode(bulan);
+    return `${namaBulan(bulan, true)} · ${tanggalPendek(awal)}–${tanggalPendek(akhir)}`;
+  }
+
+  // Where today sits in the period: { status: 'berjalan'|'selesai'|'belum', hariKe, total, sisa }
+  function posisiHari(bulan) {
+    const { awal, akhir } = rentangPeriode(bulan), hari = hariIni();
+    const total = selisihHari(awal, akhir) + 1;
+    if (hari < awal) return { status: 'belum', hariKe: 0, total, sisa: total };
+    if (hari > akhir) return { status: 'selesai', hariKe: total, total, sisa: 0 };
+    const hariKe = selisihHari(awal, hari) + 1;
+    return { status: 'berjalan', hariKe, total, sisa: total - hariKe };
   }
 
   const persen = (n) => n.toLocaleString('id-ID', { maximumFractionDigits: 1 }) + '%';
@@ -118,6 +199,17 @@ const Keu = (() => {
       Number.isFinite(Number(t.jumlah)) && typeof t.tanggal === 'string' && isBulan(t.tanggal.slice(0, 7)));
   }
 
+  function loadPengaturan() {
+    const p = baca(KEY_PENGATURAN) || {};
+    const mulai = Math.round(Number(p.mulai));
+    return { mulai: mulai >= 1 && mulai <= 31 ? mulai : 1 };
+  }
+  function savePengaturan(pengaturan) {
+    const ok = tulis(KEY_PENGATURAN, { mulai: Math.min(31, Math.max(1, Math.round(Number(pengaturan.mulai)) || 1)) });
+    mulaiCache = null;
+    return ok;
+  }
+
   const loadBudget = () => bersihkanBudget(baca(KEY_BUDGET));
   const saveBudget = (budget) => tulis(KEY_BUDGET, bersihkanBudget(budget));
   const loadNetworth = () => bersihkanNetworth(baca(KEY_NETWORTH));
@@ -126,15 +218,17 @@ const Keu = (() => {
   // ---- Backup (used by keuangan/index.html) ----
   function buatBackup(transaksi) {
     return { aplikasi: 'keuangan-bulanan', versi: 2, dibuat: new Date().toISOString(),
-      transaksi, budget: loadBudget(), networth: loadNetworth() };
+      transaksi, budget: loadBudget(), networth: loadNetworth(), pengaturan: loadPengaturan() };
   }
 
   // Accepts the v2 object above, or a v1 backup (a bare array of transactions).
-  // budget/networth are null for v1 backups, meaning "leave the current data alone".
+  // budget/networth/pengaturan are null when the backup does not contain them (v1 backups,
+  // or v2 backups made before the pay-period setting existed), meaning "leave the current data alone".
   function bacaBackup(isi) {
-    if (Array.isArray(isi)) return { transaksi: isi, budget: null, networth: null };
+    if (Array.isArray(isi)) return { transaksi: isi, budget: null, networth: null, pengaturan: null };
     if (isi && typeof isi === 'object' && Array.isArray(isi.transaksi)) {
-      return { transaksi: isi.transaksi, budget: bersihkanBudget(isi.budget), networth: bersihkanNetworth(isi.networth) };
+      return { transaksi: isi.transaksi, budget: bersihkanBudget(isi.budget), networth: bersihkanNetworth(isi.networth),
+        pengaturan: isi.pengaturan && typeof isi.pengaturan === 'object' ? isi.pengaturan : null };
     }
     throw new Error('Format backup tidak dikenali.');
   }
@@ -144,22 +238,23 @@ const Keu = (() => {
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   }
 
-  // Pick the month to show first: the current month if available, else the latest month not in the future.
-  function pilihBulanDefault(daftar) {
-    const sekarang = bulanIni();
+  // Pick the month to show first: the current one if available, else the latest one not in the future.
+  function pilihBulanDefault(daftar, sekarang = bulanIni()) {
     if (daftar.includes(sekarang)) return sekarang;
     const lampau = daftar.filter(b => b <= sekarang);
     return lampau.length ? lampau.sort().at(-1) : [...daftar].sort().at(-1);
   }
 
-  function isiDropdownBulan(select, daftar, terpilih) {
+  function isiDropdownBulan(select, daftar, terpilih, label = namaBulan) {
     select.innerHTML = [...new Set(daftar)].sort().reverse()
-      .map(b => `<option value="${b}"${b === terpilih ? ' selected' : ''}>${namaBulan(b)}</option>`).join('');
+      .map(b => `<option value="${b}"${b === terpilih ? ' selected' : ''}>${label(b)}</option>`).join('');
   }
 
   const chartTersedia = () => typeof window.Chart !== 'undefined';
 
-  return { KATEGORI, isBulan, rupiah, rupiahSingkat, namaBulan, bulanIni, bulanBerikut, persen, escapeHtml,
-    inputAngka, bacaAngka, tulisAngka, loadTransaksi, loadBudget, saveBudget, loadNetworth, saveNetworth,
+  return { KATEGORI, metaKategori, isBulan, rupiah, rupiahSingkat, namaBulan, bulanIni, bulanBerikut, bulanSebelum,
+    hariIni, persen, escapeHtml, inputAngka, bacaAngka, tulisAngka,
+    mulaiPeriode, periodeDari, periodeIni, rentangPeriode, labelRentang, labelPeriode, posisiHari, tanggalPendek,
+    loadTransaksi, loadBudget, saveBudget, loadNetworth, saveNetworth, loadPengaturan, savePengaturan,
     buatBackup, bacaBackup, cssVar, pilihBulanDefault, isiDropdownBulan, chartTersedia };
 })();

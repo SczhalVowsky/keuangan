@@ -11,26 +11,29 @@
 <link rel="apple-touch-icon" href="../icon-192.png">
 <link rel="stylesheet" href="../shared.css">
 <style>
-  .kat { padding: 12px 0; border-top: 1px solid var(--line); }
+  .kat { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; border-top: 1px solid var(--line); }
   .kat:first-child { border-top: 0; padding-top: 0; }
-  .kat-head { display: flex; justify-content: space-between; gap: 12px; }
-  .kat-head b { font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .kat-body { flex: 1; min-width: 0; }
+  .kat-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; }
+  .kat-head b { font-weight: 600; min-width: 0; }
   .kat-head span { font-variant-numeric: tabular-nums; white-space: nowrap; font-size: 14px; }
-  .track { height: 10px; border-radius: 5px; background: var(--line); overflow: hidden; margin: 6px 0 4px; }
+  .track { height: 10px; border-radius: 5px; background: var(--soft); overflow: hidden; margin: 6px 0 4px; }
   .fill { height: 100%; border-radius: 5px; }
   .fill.ok { background: var(--ok); } .fill.warn { background: var(--warn); } .fill.bad { background: var(--bad); }
   .kat-foot { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
   .kat-foot .pct { font-weight: 600; }
   .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
   .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
-  .over-list { margin: 4px 0 0; padding-left: 18px; }
-  .budget-row { display: grid; grid-template-columns: 1fr 140px; gap: 10px; align-items: center; font-size: 15px; }
+  .over-list { margin: 0; padding-left: 18px; }
+  .over-list li { padding: 3px 0; }
+  #kartu-over { border-left: 4px solid var(--bad); }
+  .budget-row { display: grid; grid-template-columns: 1fr 140px; gap: 10px; align-items: center; font-size: 15px; color: var(--text); }
 </style>
 </head>
 <body>
 <header>
-  <h1>Budget vs Realisasi</h1>
-  <select id="bulan" aria-label="Pilih bulan"></select>
+  <h1>🎯 Budget</h1>
+  <select id="bulan" aria-label="Pilih periode"></select>
 </header>
 
 <nav class="subnav" aria-label="Halaman keuangan">
@@ -56,14 +59,21 @@
     </form>
   </details>
 
-  <section class="card" id="ringkasan" hidden>
-    <h2>Ringkasan</h2>
-    <div class="summary">
-      <div class="stat"><small>Total budget</small><b id="s-budget">Rp 0</b></div>
-      <div class="stat"><small>Total realisasi</small><b id="s-real">Rp 0</b></div>
-      <div class="stat big wide"><small id="s-sisa-label">Sisa budget</small><b id="s-sisa">Rp 0</b></div>
-      <div class="stat wide"><small>Kategori over budget</small><div id="s-over"></div></div>
+  <section class="hero" id="ringkasan" hidden aria-label="Ringkasan budget">
+    <small id="s-sisa-label">Sisa budget</small>
+    <div class="angka" id="s-sisa">Rp 0</div>
+    <div class="sub" id="s-periode"></div>
+    <div class="meter" aria-hidden="true"><span id="s-meter" style="width:0"></span></div>
+    <div class="tiles">
+      <div class="tile"><small>🎯 Total budget</small><b id="s-budget">Rp 0</b></div>
+      <div class="tile"><small>💸 Realisasi</small><b id="s-real">Rp 0</b></div>
     </div>
+    <span class="chip" id="s-chip"></span>
+  </section>
+
+  <section class="card" id="kartu-over" hidden>
+    <h2>⚠️ Over budget</h2>
+    <div id="s-over"></div>
   </section>
 
   <section class="card" id="kartu-kategori" hidden>
@@ -83,7 +93,8 @@
   </section>
 
   <p class="hint">
-    Realisasi = transaksi pengeluaran yang dicatat di halaman Laporan. Budget dan transaksi tersimpan
+    Realisasi = transaksi pengeluaran yang dicatat di halaman Laporan, dihitung per periode gajian
+    (atur tanggalnya di halaman Laporan). Budget dan transaksi tersimpan
     <b>di perangkat ini</b> dan ikut tersimpan saat Anda menekan <b>Backup data</b> di halaman Laporan.
   </p>
 </main>
@@ -107,7 +118,7 @@ function hapusPesan(id) {
 
 function realisasiBulan(bulan) {
   const per = {};
-  transaksi.filter(t => t.jenis === 'keluar' && t.tanggal.startsWith(bulan))
+  transaksi.filter(t => t.jenis === 'keluar' && Keu.periodeDari(t.tanggal) === bulan)
            .forEach(t => per[t.kategori] = (per[t.kategori] || 0) + Number(t.jumlah));
   return per;
 }
@@ -131,7 +142,7 @@ function hitungBaris(bulan) {
 }
 
 // ---- Report ----
-function renderRingkasan(baris) {
+function renderRingkasan(baris, bulan) {
   const totalBudget = baris.reduce((s, r) => s + r.budget, 0);
   const totalReal = baris.reduce((s, r) => s + r.real, 0);
   const sisa = totalBudget - totalReal;
@@ -139,13 +150,18 @@ function renderRingkasan(baris) {
   $('s-real').textContent = Keu.rupiah(totalReal);
   $('s-sisa-label').textContent = sisa < 0 ? 'Melebihi budget' : 'Sisa budget';
   $('s-sisa').textContent = Keu.rupiah(Math.abs(sisa));
-  $('s-sisa').className = sisa < 0 ? 'bad' : 'ok';
+  const pos = Keu.posisiHari(bulan);
+  $('s-periode').textContent = Keu.labelRentang(bulan)
+    + (pos.status === 'berjalan' ? ` · ${pos.sisa ? `${pos.sisa} hari lagi` : 'hari terakhir'}` : '');
+  $('s-meter').style.width = `${totalBudget > 0 ? Math.min(totalReal / totalBudget * 100, 100) : 0}%`;
 
   const over = baris.filter(r => r.status === 'bad');
+  $('s-chip').textContent = over.length ? `⚠️ ${over.length} kategori over budget` : '✅ Semua kategori aman';
+  $('kartu-over').hidden = !over.length;
   $('s-over').innerHTML = over.length
-    ? `<b class="bad">${over.length} kategori</b><ul class="over-list">${over.map(r =>
-        `<li>${Keu.escapeHtml(r.kat)}: ${r.punyaBudget ? 'lebih ' + Keu.rupiah(-r.sisa) : 'tanpa budget, terpakai ' + Keu.rupiah(r.real)}</li>`).join('')}</ul>`
-    : '<b class="ok">Tidak ada</b>';
+    ? `<ul class="over-list">${over.map(r =>
+        `<li>${Keu.metaKategori(r.kat).ikon} ${Keu.escapeHtml(r.kat)}: <b class="bad">${r.punyaBudget ? 'lebih ' + Keu.rupiah(-r.sisa) : 'tanpa budget, terpakai ' + Keu.rupiah(r.real)}</b></li>`).join('')}</ul>`
+    : '';
 }
 
 function renderKategori(baris) {
@@ -154,11 +170,12 @@ function renderKategori(baris) {
     const pctTeks = r.pct === null ? (r.punyaBudget ? '—' : 'tanpa budget') : Keu.persen(r.pct);
     const sisaTeks = !r.punyaBudget ? 'belum ada budget'
       : r.sisa >= 0 ? `sisa ${Keu.rupiah(r.sisa)}` : `lebih ${Keu.rupiah(-r.sisa)}`;
-    return `<div class="kat">
+    const { ikon, warna } = Keu.metaKategori(r.kat);
+    return `<div class="kat"><span class="ikon" style="--warna:${warna}">${ikon}</span><div class="kat-body">
       <div class="kat-head"><b>${Keu.escapeHtml(r.kat)}</b><span>${Keu.rupiah(r.real)} / ${r.punyaBudget ? Keu.rupiah(r.budget) : '—'}</span></div>
       <div class="track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(lebar)}" aria-label="${Keu.escapeHtml(r.kat)}"><div class="fill ${r.status}" style="width:${lebar}%"></div></div>
       <div class="kat-foot"><span>${sisaTeks}</span><span class="pct ${r.status}">${pctTeks}</span></div>
-    </div>`;
+    </div></div>`;
   }).join('');
 }
 
@@ -204,7 +221,7 @@ function bulanSebelumDenganBudget(bulan) {
 function isiFormBudget(bulan, sumber = budget[bulan] || {}) {
   const daftar = [...Keu.KATEGORI.keluar, ...Object.keys(sumber).filter(k => !Keu.KATEGORI.keluar.includes(k))];
   $('budget-fields').innerHTML = daftar.map(kat => `
-    <label class="budget-row"><span>${Keu.escapeHtml(kat)}</span>
+    <label class="budget-row"><span>${Keu.metaKategori(kat).ikon} ${Keu.escapeHtml(kat)}</span>
       <input inputmode="numeric" autocomplete="off" placeholder="0" data-kat="${Keu.escapeHtml(kat)}" value="${Keu.tulisAngka(sumber[kat])}"></label>`).join('');
   $('budget-fields').querySelectorAll('input').forEach(Keu.inputAngka);
   $('atur-judul').textContent = `${budget[bulan] ? 'Ubah' : 'Atur'} budget ${Keu.namaBulan(bulan)}`;
@@ -262,17 +279,18 @@ function render() {
 
   hapusPesan('pesan-bulan');
   if (!adaBudget) {
-    tampilPesan(`Belum ada budget untuk <b>${Keu.namaBulan(bulan)}</b>. Isi lewat <b>Atur budget</b> di bawah.`, 'pesan-bulan');
+    tampilPesan(`Belum ada budget untuk <b>${Keu.labelPeriode(bulan)}</b>. Isi lewat <b>Atur budget</b> di bawah.`, 'pesan-bulan');
     $('atur').open = true;
   }
   isiFormBudget(bulan);
 
   const ada = baris.length > 0;
   $('ringkasan').hidden = !ada;
+  if (!ada) $('kartu-over').hidden = true;
   $('kartu-kategori').hidden = !ada;
   $('kartu-grafik').hidden = !ada;
   if (!ada) return;
-  renderRingkasan(baris);
+  renderRingkasan(baris, bulan);
   renderKategori(baris);
   renderGrafik(baris);
 }
@@ -281,11 +299,12 @@ function init() {
   if (!transaksi.length) {
     tampilPesan('Belum ada transaksi di perangkat ini, jadi realisasi masih Rp 0. Catat transaksi di halaman <a href="../">Laporan</a>, atau pulihkan backup di sana.');
   }
-  // Always offer the current and next month so a budget can be planned ahead.
-  const sekarang = Keu.bulanIni();
-  const bulanTransaksi = transaksi.filter(t => t.jenis === 'keluar').map(t => t.tanggal.slice(0, 7));
+  // Always offer the current and next period so a budget can be planned ahead.
+  // Periods are named after the month they start in (see Keu.periodeDari).
+  const sekarang = Keu.periodeIni();
+  const bulanTransaksi = transaksi.filter(t => t.jenis === 'keluar').map(t => Keu.periodeDari(t.tanggal));
   const daftar = [...Object.keys(budget), ...bulanTransaksi, sekarang, Keu.bulanBerikut(sekarang)];
-  Keu.isiDropdownBulan($('bulan'), daftar, Keu.pilihBulanDefault(daftar));
+  Keu.isiDropdownBulan($('bulan'), daftar, Keu.pilihBulanDefault(daftar, sekarang), Keu.labelPeriode);
   $('bulan').addEventListener('change', render);
   // Redraw only the chart on theme change so unsaved form input is kept.
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {

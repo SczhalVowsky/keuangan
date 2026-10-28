@@ -19,7 +19,7 @@
 </head>
 <body>
 <header>
-  <h1>Net Worth</h1>
+  <h1>📈 Net Worth</h1>
   <select id="bulan" aria-label="Pilih bulan untuk rincian"></select>
 </header>
 
@@ -32,13 +32,14 @@
 <main>
   <div id="pesan" hidden></div>
 
-  <section class="card" id="ringkasan" hidden>
-    <h2 id="r-judul">Net worth</h2>
-    <div class="summary">
-      <div class="stat big wide"><small id="r-label">Net worth</small><b id="r-nw">Rp 0</b></div>
-      <div class="stat wide"><small id="r-selisih-label">Selisih vs bulan lalu</small><b id="r-selisih">—</b></div>
-      <div class="stat"><small>Total aset</small><b class="in" id="r-aset">Rp 0</b></div>
-      <div class="stat"><small>Total kewajiban</small><b class="out" id="r-kewajiban">Rp 0</b></div>
+  <section class="hero" id="ringkasan" hidden aria-label="Ringkasan net worth">
+    <small id="r-label">Net worth</small>
+    <div class="angka" id="r-nw">Rp 0</div>
+    <span class="chip" id="r-selisih">—</span>
+    <div class="sub" id="r-selisih-label"></div>
+    <div class="tiles">
+      <div class="tile"><small>🏦 Total aset</small><b id="r-aset">Rp 0</b></div>
+      <div class="tile"><small>💳 Total kewajiban</small><b id="r-kewajiban">Rp 0</b></div>
     </div>
   </section>
 
@@ -108,25 +109,21 @@ function muatSnapshot() {
 // ---- Report ----
 function renderRingkasan() {
   const akhir = snapshot.at(-1), sebelum = snapshot.at(-2);
-  $('r-judul').textContent = `Net worth · ${Keu.namaBulan(akhir.bulan)}`;
   $('r-label').textContent = `Net worth ${Keu.namaBulan(akhir.bulan)}`;
   $('r-nw').textContent = Keu.rupiah(akhir.nw);
-  $('r-nw').className = akhir.nw < 0 ? 'bad' : '';
   $('r-aset').textContent = Keu.rupiah(akhir.totalAset);
   $('r-kewajiban').textContent = Keu.rupiah(akhir.totalKewajiban);
 
   if (!sebelum) {
-    $('r-selisih-label').textContent = 'Selisih vs bulan lalu';
-    $('r-selisih').textContent = 'Belum ada snapshot sebelumnya';
-    $('r-selisih').className = 'muted';
+    $('r-selisih-label').textContent = '';
+    $('r-selisih').textContent = 'Snapshot pertama';
     return;
   }
   const selisih = akhir.nw - sebelum.nw;
   const pct = sebelum.nw !== 0 ? selisih / Math.abs(sebelum.nw) * 100 : null;
   const tanda = selisih > 0 ? '+' : '';
-  $('r-selisih-label').textContent = `Selisih vs ${Keu.namaBulan(sebelum.bulan)}`;
-  $('r-selisih').textContent = `${tanda}${Keu.rupiah(selisih)}` + (pct === null ? '' : ` (${tanda}${Keu.persen(pct)})`);
-  $('r-selisih').className = selisih < 0 ? 'bad' : 'ok';
+  $('r-selisih-label').textContent = `dibanding ${Keu.namaBulan(sebelum.bulan)}`;
+  $('r-selisih').textContent = `${selisih < 0 ? '▼' : '▲'} ${tanda}${Keu.rupiah(selisih)}` + (pct === null ? '' : ` (${tanda}${Keu.persen(pct)})`);
 }
 
 function renderGrafik() {

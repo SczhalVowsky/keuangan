@@ -6,7 +6,7 @@ seperti aplikasi biasa. Tidak perlu Play Store, tidak perlu internet setelah dip
 ## Fitur
 
 - Catat **pemasukan** dan **pengeluaran** (jumlah, kategori, tanggal, catatan)
-- **Ringkasan per bulan**: total pemasukan, pengeluaran, dan saldo
+- **Ringkasan per periode**: total pemasukan, pengeluaran, dan saldo, per bulan kalender atau dari gajian ke gajian
 - **Grafik pengeluaran per kategori** (tahu uang paling banyak habis di mana)
 - **Unduh laporan bulanan** dalam format CSV (bisa dibuka di Excel / Google Sheets)
 - **Backup & pulihkan** data (file `.json`)
@@ -39,8 +39,27 @@ seperti aplikasi biasa. Tidak perlu Play Store, tidak perlu internet setelah dip
 ### 3. Pakai sehari-hari
 
 1. Pilih **Pengeluaran** atau **Pemasukan**, isi jumlah, pilih kategori, lalu **Simpan**.
-2. Ganti bulan lewat pilihan bulan di pojok kanan atas untuk melihat laporan bulan lain.
-3. Di akhir bulan, ketuk **Unduh laporan bulan ini** untuk menyimpan laporan ke Excel.
+2. Ganti periode dengan tombol **‹** dan **›** di atas ringkasan.
+3. Di akhir periode, ketuk **Unduh laporan periode ini** untuk menyimpan laporan ke Excel.
+
+## Periode gajian (cut off)
+
+Secara bawaan laporan dihitung **per bulan kalender** (tanggal 1 sampai akhir bulan).
+Kalau Anda gajian di tanggal tertentu, atur di halaman Laporan → **⚙️ Periode gajian**.
+
+Contoh tanggal gajian **28**:
+
+| Periode | Rentang tanggal |
+|---|---|
+| Oktober 2026 | 28 Okt – 27 Nov 2026 |
+| November 2026 | 28 Nov – 27 Des 2026 |
+
+- Periode diberi nama sesuai bulan gajiannya. Belanja tanggal 5 November masuk periode **Oktober**
+  (dibiayai gaji Oktober).
+- Halaman **Budget** ikut memakai periode ini, jadi budget "Oktober" berlaku 28 Okt – 27 Nov.
+- Gajian tanggal 29–31: di bulan yang lebih pendek, periode mulai di hari terakhir bulan itu.
+- Pengaturan ini tersimpan di HP masing-masing dan ikut di **Backup data**.
+- Net worth tetap dicatat per bulan kalender (snapshot di akhir bulan).
 
 ## Penting: soal data
 
@@ -95,6 +114,6 @@ budget dan net worth Anda tidak tersentuh saat memulihkan file lama).
 ## Mengubah aplikasi
 
 - Daftar kategori ada di `shared.js`, di bagian `const KATEGORI = { ... }` (dipakai halaman Laporan dan Budget). Tambah atau hapus sesuai kebutuhan.
-- Setelah mengubah file apa pun, naikkan angka `VERSION` di `sw.js` (misalnya `keuangan-v3`)
+- Setelah mengubah file apa pun, naikkan angka `VERSION` di `sw.js` (misalnya `keuangan-v4`)
   supaya HP mengambil versi terbaru.
 - Coba di komputer: jalankan `npx http-server .` di folder repo ini lalu buka `http://localhost:8080`.
